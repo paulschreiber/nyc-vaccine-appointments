@@ -5,6 +5,8 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    - cron:  '*/15 * * * *'
 
 jobs:
   scheduled:
@@ -20,7 +22,7 @@ jobs:
         ruby-version: 2.7.2
         bundler-cache: true
     - name: Fetch latest data
-      run: bundle exec ruby get-appointments --appointments 7 --force
+      run: bundle exec ruby get-appointments --appointments 14 --force --make-appointment-list
       env:
         AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
     - name: Commit and push if appointment data changed
@@ -30,14 +32,4 @@ jobs:
         git add -A
         timestamp=$(date -u)
         git commit -m "Latest data: ${timestamp}" || exit 0
-        git push
-    - name: Generate web page
-      run: bundle exec ruby get-appointments --make-appointment-list
-    - name: Commit and push if html changed
-      run: |-
-        git config user.name "Automated"
-        git config user.email "actions@users.noreply.github.com"
-        git add -A
-        timestamp=$(date -u)
-        git commit -m "Generate index.html ${timestamp}" || exit 0
         git push
