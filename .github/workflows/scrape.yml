@@ -20,7 +20,7 @@ jobs:
         ruby-version: 2.7.2
         bundler-cache: true
     - name: Fetch latest data
-      run: bundle exec ruby get-appointments --appointments 7
+      run: bundle exec ruby get-appointments --appointments 7 --force
       env:
         AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
     - name: Commit and push if appointment data changed
