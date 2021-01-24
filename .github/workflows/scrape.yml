@@ -10,9 +10,6 @@ jobs:
   scheduled:
     runs-on: ubuntu-latest
     steps:
-    - shell: bash
-      env:
-        AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
     - name: Check out this repo
       uses: actions/checkout@v2
       with:
@@ -24,6 +21,8 @@ jobs:
         bundler-cache: true
     - name: Fetch latest data
       run: bundle exec ruby get-appointments --appointments 7
+      env:
+        AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
     - name: Commit and push if appointment data changed
       run: |-
         git config user.name "Automated"
