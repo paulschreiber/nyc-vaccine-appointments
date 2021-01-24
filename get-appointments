@@ -1,0 +1,216 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: false
+
+# rubocop:disable Style/FormatStringToken, Style/FormatString, Metrics/MethodLength, Metrics/AbcSize, Metrics/PerceivedComplexity
+
+require 'dotenv/load'
+require 'typhoeus'
+require 'json'
+require 'csv'
+require 'fileutils'
+require 'optparse'
+require 'logger'
+require 'erb'
+
+@logger = Logger.new(STDOUT)
+@logger.level = ENV['DEBUG_LOG'] == 'true' ? Logger::DEBUG : Logger::WARN
+
+AUTH_HEADERS = { 'authorization': 'Bearer %s' % ENV['AUTH_TOKEN'] }.freeze
+
+# test entries in the data
+TEST_SITES = [21, 22, 30, 35].freeze
+
+# sites with a fixd time period which has passed
+EXPIRED_SITES = [27, 28, 29, 40, 41, 42].freeze
+EXCLUDED_SITES = (TEST_SITES + EXPIRED_SITES).freeze
+
+# NYC has inconsistencies in its list of site names
+@site_name_map = {
+  'George Westinghouse Vocational HS' => 'George Westinghouse Vocational High School',
+  'Abraham Lincoln Hill School' => 'Abraham Lincoln High School',
+  'Wadleigh Campus I.s. 88' => 'Wadleigh Campus/I.S. 88',
+  'Adlai E Stevenson High School' => 'Adlai E. Stevenson High School'
+}
+DAY_IN_SECONDS = 86_400
+ARGV << '-h' if ARGV.empty?
+
+def get_appointment_data(hydra:, site_id:, date:, force: false)
+  FileUtils.mkdir_p('data/appointments/%s' % date)
+  filename = 'data/appointments/%s/%s.json' % [date, site_id]
+
+  if File.exist?(filename) && !force
+    @logger.info 'File %s exists, skipping' % filename
+    return
+  end
+
+  site_url = 'https://api.vaccinepod.nyc.gov/appointment-slot/event/%s?date=%s' % [site_id, date]
+  @logger.debug site_url
+
+  request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS })
+  request.on_complete do |data|
+    raise StandardError, 'Unauthorized' if data.code == 401
+
+    if !data.body.empty?
+      File.write(filename, data.body)
+    else
+      @logger.warn 'Nothing found for site %s on date %s' % [site_id, date]
+    end
+  end
+  hydra.queue(request)
+end
+
+def get_data_for_dates(date_list:, location_list: false, force: false)
+  location_list ||= site_location_ids
+
+  hydra = Typhoeus::Hydra.hydra
+  location_list.each do |site_id|
+    date_list.each do |d|
+      get_appointment_data(hydra: hydra, site_id: site_id, date: d, force: force)
+    end
+  end
+  hydra.run
+end
+
+def all_site_data(force: false)
+  hydra = Typhoeus::Hydra.hydra
+  (16..67).each do |site_id|
+    site_url = 'https://api.vaccinepod.nyc.gov/vaccination-event/%s' % site_id
+    filename = 'data/sites/%s.json' % site_id
+
+    if File.exist?(filename) && !force
+      @logger.info 'File %s exists, skipping' % filename
+      next
+    end
+
+    request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS })
+    request.on_complete do |data|
+      raise StandardError, 'Unauthorized' if data.code == 401
+
+      if !data.body.empty?
+        File.write(filename, data.body)
+      else
+        @logger.warn 'Nothing found for site %s' % [site_id]
+      end
+    end
+    hydra.queue(request)
+  end
+  hydra.run
+end
+
+def make_appointment_list(format: :html)
+  result = {}
+
+  site_location_ids.sort.each do |site_id|
+    result[site_id] = {}
+  end
+
+  Dir['data/appointments/*'].sort.each do |date_path|
+    date = File.basename(date_path)
+
+    Dir['%s/*.json' % date_path].sort.each do |file|
+      site_id = File.basename(file)[0..-6].to_i
+
+      # ignore appointments for excluded sites
+      next unless result.key?(site_id)
+
+      @logger.debug 'Parsing %s' % [file]
+      data = JSON.parse(File.read(file))
+      if data == []
+        result[site_id][date] = 0
+        @logger.debug 'No appointments for %s' % [file]
+      else
+        result[site_id][date] = data.map { |x| x['availableAppointments'] }.sum
+      end
+    end
+  end
+
+  site_data = CSV.read('data/sites.csv')
+
+  # map site id to name and address
+  @site_details = site_data.each_with_object({}) do |element, item|
+    item[element.first.to_i] = element[1..-1]
+    item
+  end
+
+  if format == :csv
+    CSV.open('data/appointments.csv', 'w') do |csv|
+      csv << result.values.first.keys.unshift('Location')
+      result.keys.each do |site_id|
+        csv << result[site_id].values.unshift(@site_details[site_id][0])
+      end
+    end
+  elsif format == :html
+    template = ERB.new(File.read('template.html.erb'))
+
+    @thead = result.values.first.keys.map { |date| DateTime.parse(date).strftime('%b %e') }.unshift('Location', 'Dose')
+    @tbody = []
+    result.keys.each do |site_id|
+      # the site name may contain a hyphen and info about the dose
+      # it may contain multiple hyphens, so cap to 2 parts
+      site_and_dose = @site_details[site_id][0].split(' - ', 2)
+
+      # the name has no hyphen, set a blank dose column
+      site_and_dose << '' if site_and_dose.length == 1
+
+      site_and_dose.unshift(site_id)
+      @tbody << site_and_dose.concat(result[site_id].values)
+    end
+  end
+
+  # sort by borough and then site name
+  @tbody = @tbody.sort_by do |item|
+    info = @site_details[item[0]]
+    [info[2], info[0]]
+  end
+
+  File.write('index.html', template.result)
+end
+
+def get_date_range(offset, num_days)
+  (0..(num_days - 1)).map { |x|  (Time.now + ((offset + 1 + x) * DAY_IN_SECONDS)).to_s[0..9] }
+end
+
+def site_location_ids
+  Dir['data/sites/*.json'].map { |x| File.basename(x)[0..-6].to_i } - EXCLUDED_SITES
+end
+
+def make_site_list
+  CSV.open('data/sites.csv', 'w') do |csv|
+    Dir['data/sites/*.json'].sort.each do |site_file|
+      data = JSON.parse(File.read(site_file))
+      csv << [data['id'], data['centerName'], data['addressLine2'], data['city'], data['state'], data['zipCode']]
+    end
+  end
+end
+
+if __FILE__ == $PROGRAM_NAME
+  options = {}
+  OptionParser.new do |opt|
+    opt.banner = 'Usage: %s [options]' % $PROGRAM_NAME
+
+    opt.on('--sites', 'Get list of vaccination sites') { |o| options[:sites] = o }
+    opt.on('--make-site-list', 'Make CSV of vaccition sites') { |o| options[:csv] = o }
+    opt.on('--appointments DAYS', Integer, 'Get list of available appointments') { |o| options[:appointments] = o }
+    opt.on('--make-appointment-list', 'Make table of available appointments') { |o| options[:table] = o }
+    opt.on('--force', 'Fetch data, event if it exists') { |o| options[:force] = o }
+
+    opt.on_tail('-h', '--help', 'Show this message') do
+      puts opt
+      exit
+    end
+  end.parse!
+
+  force_fetch = !options[:force].nil?
+
+  all_site_data(force: force_fetch) if options[:sites]
+  make_site_list if options[:csv]
+
+  if options[:appointments]
+    date_list = get_date_range(0, options[:appointments])
+    get_data_for_dates(date_list: date_list, force: force_fetch)
+  end
+
+  make_appointment_list if options[:table]
+end
+
+# rubocop:enable Style/FormatStringToken, Style/FormatString, Metrics/MethodLength, Metrics/AbcSize, Metrics/PerceivedComplexity
