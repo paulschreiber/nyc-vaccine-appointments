@@ -5,7 +5,7 @@ Scrapes the NYC COVID appointments JSON and commits it back to this repo. The go
 
 - <https://paulschreiber.github.io/nyc-vaccine-appointments/index.html>
 
-## Inspired By
+## Inspired by
 Alex Gaynor et al: <https://alex.github.io/nyt-2020-election-scraper/>
 which was inspired by
 Simon Willison: <https://simonwillison.net/2020/Oct/9/git-scraping/>
