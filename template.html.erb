@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link href="assets/bootstrap.min.css" rel="stylesheet" />
+		<style>td{text-align:center;}.site-name{border-bottom: 1px dotted gray;}</style>
+		<title>NYC COVID-19 vaccine appointment availability</title>
+	</head>
+	<body>
+		<div class="container">
+			<h1>NYC COVID-19 vaccine appointment availability</h1>
+
+			<p>Last updated on <%= @generated_at %>.</p>
+
+			<table class="table table-sm">
+				<thead>
+					<tr>
+					<%- @thead.each do |cell| -%>
+						<th><%= cell %></th>
+					<%- end -%>
+					</tr>
+				</thead>
+				<%-
+					last_borough = nil
+					last_site_name = nil
+					column_count = @thead.size
+					row_counter = 0
+				-%>
+				<tbody>
+					<%- @tbody.each do |row| -%>
+						<%-
+							borough = @site_details[row[0]][2]
+							site_name = @site_name_map.has_key?(row[1]) ? @site_name_map[row[1]] : row[1]
+							address = "#{@site_details[row[0]][1]}, #{borough} NY #{@site_details[row[0]][4]}"
+							if borough == last_borough && site_name != last_site_name
+								row_counter = row_counter + 1
+							elsif borough != last_borough
+								row_counter = 0
+							end
+							stripe = row_counter % 2 == 1
+						-%>
+						<%- if borough != last_borough -%>
+							<tr class="table-info">
+								<th colspan="<%= column_count %>"><%= borough %></th>
+							</tr>
+							<%- last_borough = borough -%>
+						<%- end -%>
+						<tr<% if stripe %> class="table-secondary"<% end %>>
+								<th>
+									<%- if site_name != last_site_name -%>
+									<span class="site-name" title="<%= address %>"><%= site_name %></span>
+									<%- last_site_name = site_name -%>
+								<%- end -%>
+								</th>
+								<th><%= row[2] %></th>
+								<%- row[3..].each do |cell| -%>
+									<%- if cell > 0 -%>
+								<td class="table-success"><%= cell %></td>
+									<%- else -%>
+								<td>·</td>
+									<%- end -%>
+								<%- end -%>
+						</tr>
+					<%- end -%>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>
