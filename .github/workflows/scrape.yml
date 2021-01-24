@@ -5,3 +5,40 @@ on:
     branches:
       - main
   workflow_dispatch:
+
+jobs:
+  scheduled:
+    runs-on: ubuntu-latest
+    steps:
+    - shell: bash
+      env:
+        AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+    - name: Check out this repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up Ruby 2.7.2
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 2.7.2
+        bundler-cache: true
+    - name: Fetch latest data
+      run: bundle exec ruby nyc-covid.rb --appointments 7
+    - name: Commit and push if appointment data changed
+      run: |-
+        git config user.name "Automated"
+        git config user.email "actions@users.noreply.github.com"
+        git add -A
+        timestamp=$(date -u)
+        git commit -m "Latest data: ${timestamp}" || exit 0
+        git push
+    - name: Generate web page
+      run: bundle exec ruby nyc-covid.rb --make-appointment-list
+    - name: Commit and push if html changed
+      run: |-
+        git config user.name "Automated"
+        git config user.email "actions@users.noreply.github.com"
+        git add -A
+        timestamp=$(date -u)
+        git commit -m "Generate index.html ${timestamp}" || exit 0
+        git push
