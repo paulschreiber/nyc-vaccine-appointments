@@ -140,7 +140,7 @@ def make_appointment_list(format: :html)
       end
     end
   elsif format == :html
-    template = ERB.new(File.read('template.html.erb'))
+    template = ERB.new(File.read('template.html.erb'), nil, '-')
 
     @thead = result.values.first.keys.map { |date| DateTime.parse(date).strftime('%b %e') }.unshift('Location', 'Dose')
     @tbody = []
