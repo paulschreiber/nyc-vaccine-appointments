@@ -142,6 +142,7 @@ def make_appointment_list(format: :html)
   elsif format == :html
     template = ERB.new(File.read('template.html.erb'), nil, '-')
 
+    @generated_at = Time.new.strftime('%A, %B %e, %Y at %l:%M %p %Z')
     @thead = result.values.first.keys.map { |date| DateTime.parse(date).strftime('%b %e') }.unshift('Location', 'Dose')
     @tbody = []
     result.keys.each do |site_id|
