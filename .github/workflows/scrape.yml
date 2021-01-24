@@ -23,7 +23,7 @@ jobs:
         ruby-version: 2.7.2
         bundler-cache: true
     - name: Fetch latest data
-      run: bundle exec ruby nyc-covid.rb --appointments 7
+      run: bundle exec ruby get-appointments --appointments 7
     - name: Commit and push if appointment data changed
       run: |-
         git config user.name "Automated"
@@ -33,7 +33,7 @@ jobs:
         git commit -m "Latest data: ${timestamp}" || exit 0
         git push
     - name: Generate web page
-      run: bundle exec ruby nyc-covid.rb --make-appointment-list
+      run: bundle exec ruby get-appointments --make-appointment-list
     - name: Commit and push if html changed
       run: |-
         git config user.name "Automated"
