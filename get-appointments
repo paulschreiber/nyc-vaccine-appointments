@@ -48,8 +48,8 @@ def get_appointment_data(hydra:, site_id:, date:, force: false)
 
   request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS })
   request.on_complete do |data|
-    @logger.debug data.code
-    @logger.debug data.body
+    @logger.warn data.code
+    @logger.warn data.body
     raise StandardError, 'Unauthorized' if data.code == 401
 
     if !data.body.empty?
