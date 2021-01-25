@@ -11,6 +11,7 @@ require 'fileutils'
 require 'optparse'
 require 'logger'
 require 'erb'
+require 'date'
 
 @logger = Logger.new(STDOUT)
 @logger.level = ENV['DEBUG_LOG'] == 'true' ? Logger::DEBUG : Logger::WARN
@@ -31,7 +32,6 @@ EXCLUDED_SITES = (TEST_SITES + EXPIRED_SITES).freeze
   'Wadleigh Campus I.s. 88' => 'Wadleigh Campus/I.S. 88',
   'Adlai E Stevenson High School' => 'Adlai E. Stevenson High School'
 }
-DAY_IN_SECONDS = 86_400
 ARGV << '-h' if ARGV.empty?
 
 def get_appointment_data(hydra:, site_id:, date:, force: false)
@@ -46,12 +46,16 @@ def get_appointment_data(hydra:, site_id:, date:, force: false)
   site_url = 'https://api.vaccinepod.nyc.gov/appointment-slot/event/%s?date=%s' % [site_id, date]
   @logger.debug site_url
 
-  request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS })
+  request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS, ssl_verifypeer: false })
   request.on_complete do |data|
-    raise StandardError, 'Unauthorized' if data.code == 401
+    raise StandardError, 'Unauthorized' if data.code == 401    
 
-    if !data.body.empty?
+    if data.success? && !data.body.empty?
       File.write(filename, data.body)
+    elsif data.timed_out?
+      @Logger.warn 'Timeout out fetching site %s on date %s' % [site_id, date]
+    elsif data.code == 0
+      @logger.warn data.return_message
     else
       @logger.warn 'Nothing found for site %s on date %s' % [site_id, date]
     end
@@ -82,12 +86,16 @@ def all_site_data(force: false)
       next
     end
 
-    request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS })
+    request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS, ssl_verifypeer: false })
     request.on_complete do |data|
       raise StandardError, 'Unauthorized' if data.code == 401
 
-      if !data.body.empty?
+      if data.success? && !data.body.empty?
         File.write(filename, data.body)
+      elsif data.timed_out?
+        @Logger.warn 'Timeout out fetching site %s' % [site_id]
+      elsif data.code == 0
+        @logger.warn data.return_message
       else
         @logger.warn 'Nothing found for site %s' % [site_id]
       end
@@ -106,9 +114,12 @@ def make_appointment_list(format: :html)
 
   Dir['data/appointments/*'].sort.each do |date_path|
     date = File.basename(date_path)
+    
+    # skip dates in the past
+    next unless date >= Date.today.to_s
 
     Dir['%s/*.json' % date_path].sort.each do |file|
-      site_id = File.basename(file)[0..-6].to_i
+      site_id = File.basename(file, '.json').to_i
 
       # ignore appointments for excluded sites
       next unless result.key?(site_id)
@@ -168,11 +179,11 @@ def make_appointment_list(format: :html)
 end
 
 def get_date_range(offset, num_days)
-  (0..(num_days - 1)).map { |x|  (Time.now + ((offset + 1 + x) * DAY_IN_SECONDS)).to_s[0..9] }
+  (0..(num_days - 1)).map { |x|  (Date.today + (offset + x)).to_s }
 end
 
 def site_location_ids
-  Dir['data/sites/*.json'].map { |x| File.basename(x)[0..-6].to_i } - EXCLUDED_SITES
+  Dir['data/sites/*.json'].map { |x| File.basename(x, '.json').to_i } - EXCLUDED_SITES
 end
 
 def make_site_list

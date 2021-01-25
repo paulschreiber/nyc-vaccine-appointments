@@ -26,14 +26,18 @@ jobs:
         ruby-version: 2.7.2
         bundler-cache: true
     - name: Fetch latest data
-      run: bundle exec ruby get-appointments --appointments 14 --force --make-appointment-list
+      run: bundle exec ruby get-appointments --appointments 21 --force
       env:
         AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        DEBUG_LOG: ${{ secrets.DEBUG_LOG }}
     - name: Commit and push if appointment data changed
       run: |-
-        git config user.name "Automated"
-        git config user.email "actions@users.noreply.github.com"
-        git add -A
-        timestamp=$(date -u)
-        git commit -m "Latest data: ${timestamp}" || exit 0
-        git push
+        if ! git diff --quiet; then
+          bundle exec ruby get-appointments --make-appointment-list
+          git config user.name "Automated"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          timestamp=$(date -u)
+          git commit -m "Latest data: ${timestamp}" || exit 0
+          git push
+        fi
