@@ -26,7 +26,7 @@ jobs:
         ruby-version: 2.7.2
         bundler-cache: true
     - name: Fetch latest data
-      run: bundle exec ruby get-appointments --appointments 14 --force --make-appointment-list
+      run: bundle exec ruby get-appointments --appointments 21 --force --make-appointment-list
       env:
         AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
         DEBUG_LOG: ${{ secrets.DEBUG_LOG }}
