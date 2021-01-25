@@ -32,7 +32,7 @@ jobs:
         DEBUG_LOG: ${{ secrets.DEBUG_LOG }}
     - name: Commit and push if appointment data changed
       run: |-
-        if git diff --quiet; then
+        if ! git diff --quiet; then
           bundle exec ruby get-appointments --make-appointment-list
           git config user.name "Automated"
           git config user.email "actions@users.noreply.github.com"
