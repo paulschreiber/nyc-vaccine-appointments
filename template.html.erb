@@ -5,6 +5,13 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="assets/bootstrap.min.css" rel="stylesheet" />
 		<style>td{text-align:center;}.site-name{border-bottom: 1px dotted gray;}</style>
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-8M4N3M3GTQ"></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag(){dataLayer.push(arguments);}
+			gtag('js', new Date());
+			gtag('config', 'G-8M4N3M3GTQ');
+		</script>
 		<title>NYC COVID-19 vaccine appointment availability</title>
 	</head>
 	<body>
@@ -14,7 +21,7 @@
 			<p>This page shows which NYC Health + Hospitals locations have appointments available. Instead of spending time clickaing around and checking each vaccination site individually, use this chart. If you see a spot, go to <a href="https://vaccinepod.nyc.gov/">vaccinepod.nyc.gov</a> to try and book an appointment. Not all vaccination sites are available to all categories of eligible people.</p>
 			<p><a href="https://vaccinefinder.nyc.gov/">NYC Vaccine Finder</a> lists all sites across NYC which provide vaccinations, but does not show availability.</p>
 			<p>Last updated <%= @generated_at %>.</p>
-			
+
 			<table class="table table-sm">
 				<thead>
 					<tr>
