@@ -29,6 +29,7 @@ jobs:
       run: bundle exec ruby get-appointments --appointments 14 --force --make-appointment-list
       env:
         AUTH_TOKEN: ${{ secrets.AUTH_TOKEN }}
+        DEBUG_LOG: ${{ secrets.DEBUG_LOG }}
     - name: Commit and push if appointment data changed
       run: |-
         git config user.name "Automated"
