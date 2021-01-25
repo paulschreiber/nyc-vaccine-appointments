@@ -48,12 +48,14 @@ def get_appointment_data(hydra:, site_id:, date:, force: false)
 
   request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS })
   request.on_complete do |data|
-    @logger.warn data.code
-    @logger.warn data.body
-    raise StandardError, 'Unauthorized' if data.code == 401
+    raise StandardError, 'Unauthorized' if data.code == 401    
 
-    if !data.body.empty?
+    if data.success? && !data.body.empty?
       File.write(filename, data.body)
+    elsif data.timed_out?
+      @Logger.warn 'Timeout out fetching site %s on date %s' % [site_id, date]
+    elsif data.code == 0
+      @logger.warn data.return_message
     else
       @logger.warn 'Nothing found for site %s on date %s' % [site_id, date]
     end
