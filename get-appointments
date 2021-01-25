@@ -64,7 +64,7 @@ end
 def get_data_for_dates(date_list:, location_list: false, force: false)
   location_list ||= site_location_ids
 
-  hydra = Typhoeus::Hydra.hydra
+  hydra = Typhoeus::Hydra.hydra(max_concurrency: 20)
   location_list.each do |site_id|
     date_list.each do |d|
       get_appointment_data(hydra: hydra, site_id: site_id, date: d, force: force)
