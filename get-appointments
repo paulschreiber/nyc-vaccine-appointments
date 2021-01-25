@@ -46,7 +46,7 @@ def get_appointment_data(hydra:, site_id:, date:, force: false)
   site_url = 'https://api.vaccinepod.nyc.gov/appointment-slot/event/%s?date=%s' % [site_id, date]
   @logger.debug site_url
 
-  request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS })
+  request = Typhoeus::Request.new(site_url, { headers: AUTH_HEADERS, sslcert: File.read('403e062a2653059113285baf80a0d4ae422c848c9f78fad01fc94bc5b87fef1a.pem') })
   request.on_complete do |data|
     raise StandardError, 'Unauthorized' if data.code == 401    
 
