@@ -124,8 +124,11 @@ def make_appointment_list(format: :html)
         result[site_id][date] = {}
         @logger.debug 'No appointments for %s' % [file]
       else
+        # report appointments after 6pm (which seem to be ghost appointments)
         # sort by start time, and format as (12 hour time):(appointment count)
-        result[site_id][date] = data.sort_by do |item|
+        result[site_id][date] = data.filter do |item|
+          item['startTime'] < '18:00:00'
+        end.sort_by do |item|
           item['startTime']
         end.each_with_object({}) do |element, items|
           items[Time.strptime(element['startTime'], "%H:%M:%S").strftime("%l:%M %P").strip] = element['availableAppointments']
