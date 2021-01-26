@@ -10,6 +10,7 @@ require 'optparse'
 require 'logger'
 require 'erb'
 require 'date'
+require 'time'
 
 @logger = Logger.new(STDOUT)
 @logger.level = ENV['DEBUG_LOG'] == 'true' ? Logger::DEBUG : Logger::WARN
@@ -120,10 +121,13 @@ def make_appointment_list(format: :html)
       @logger.debug 'Parsing %s' % [file]
       data = JSON.parse(File.read(file))
       if data == []
-        result[site_id][date] = 0
+        result[site_id][date] = {}
         @logger.debug 'No appointments for %s' % [file]
       else
-        result[site_id][date] = data.map { |x| x['availableAppointments'] }.sum
+        result[site_id][date] = data.each_with_object({}) do |element, items|
+          items[Time.strptime(element['startTime'], "%H:%M:%S").strftime("%l:%M %P").strip] = element['availableAppointments']
+          items
+        end
       end
     end
   end
@@ -131,9 +135,9 @@ def make_appointment_list(format: :html)
   site_data = CSV.read('data/sites.csv')
 
   # map site id to name and address
-  @site_details = site_data.each_with_object({}) do |element, item|
-    item[element.first.to_i] = element[1..-1]
-    item
+  @site_details = site_data.each_with_object({}) do |element, items|
+    items[element.first.to_i] = element[1..-1]
+    items
   end
 
   if format == :csv

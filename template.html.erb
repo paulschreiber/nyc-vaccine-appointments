@@ -64,8 +64,8 @@
 								</th>
 								<th><%= row[2] %></th>
 								<%- row[3..].each do |cell| -%>
-									<%- if cell > 0 -%>
-								<td class="table-success"><%= cell %></td>
+									<%- if cell != {} -%>
+								<td class="table-success"><span title="<%= cell.keys.map{ |key| "#{key} (#{cell[key]})" }.join(', ') -%>"><%= cell.values.sum %></span></td>
 									<%- else -%>
 								<td>·</td>
 									<%- end -%>
