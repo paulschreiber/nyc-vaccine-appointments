@@ -37,6 +37,7 @@ ELIGIBILITY_MAP = {
   'Abraham Lincoln Hill School' => 'Abraham Lincoln High School',
   'Wadleigh Campus I.s. 88' => 'Wadleigh Campus/I.S. 88',
   'Adlai E Stevenson High School' => 'Adlai E. Stevenson High School'
+  'SeniorCare EMS Event' => 'SeniorCare EMS'
 }
 ARGV << '-h' if ARGV.empty?
 
