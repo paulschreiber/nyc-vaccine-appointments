@@ -42,6 +42,7 @@
 							borough = @site_details[row[0]][2]
 							site_name = @site_name_map.has_key?(row[1]) ? @site_name_map[row[1]] : row[1]
 							address = "#{@site_details[row[0]][1]}, #{borough} NY #{@site_details[row[0]][4]}"
+							description = @site_details[row[0]][5]
 							if borough == last_borough && site_name != last_site_name
 								row_counter = row_counter + 1
 							elsif borough != last_borough
@@ -63,6 +64,7 @@
 								<%- end -%>
 								</th>
 								<th><%= row[2] %></th>
+								<th><%= description %></th>
 								<%- row[3..].each do |cell| -%>
 									<%- if cell != {} -%>
 								<td class="table-success"><span title="<%= cell.keys.map{ |key| "#{key} (#{cell[key]})" }.join(', ') -%>"><%= cell.values.sum %></span></td>
