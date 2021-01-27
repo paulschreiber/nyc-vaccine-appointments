@@ -193,7 +193,7 @@ def make_site_list
   CSV.open('data/sites.csv', 'w') do |csv|
     Dir['data/sites/*.json'].sort.each do |site_file|
       data = JSON.parse(File.read(site_file))
-      csv << [data['id'], data['centerName'], data['addressLine2'], data['city'], data['state'], data['zipCode']]
+      csv << [data['id'], data['centerName'], data['addressLine2'], data['city'], data['state'], data['zipCode'], data['vaccineProgram']['description']]
     end
   end
 end
