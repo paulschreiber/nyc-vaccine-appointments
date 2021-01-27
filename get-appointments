@@ -31,6 +31,12 @@ ELIGIBILITY_MAP = {
   'Closed POD for REMSCO' => 'REMSCO',
 }.freeze
 
+DOSE_MAP = {
+  'First Dose' => 'First',
+  'Second Dose' => 'Second',
+  'REMSCO - First Dose - Closed POD Event' => 'First',
+}.freeze
+
 # NYC has inconsistencies in its list of site names
 @site_name_map = {
   'George Westinghouse Vocational HS' => 'George Westinghouse Vocational High School',
@@ -175,6 +181,8 @@ def make_appointment_list(format: :html)
 
       # the name has no hyphen, set a blank dose column
       site_and_dose << '' if site_and_dose.length == 1
+
+      site_and_dose[1] = DOSE_MAP.key?(site_and_dose[1]) ? DOSE_MAP[site_and_dose[1]] : site_and_dose[1]
 
       site_and_dose.unshift(site_id)
       @tbody << site_and_dose.concat(result[site_id].values)
