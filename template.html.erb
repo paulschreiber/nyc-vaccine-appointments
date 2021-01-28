@@ -4,7 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="assets/bootstrap.min.css" rel="stylesheet" />
-		<style>td{text-align:center;}.site-name{border-bottom: 1px dotted gray;}</style>
+		<style>td{text-align:center;}.site-name{border-bottom: 1px dotted gray;}.nav,boros{margin-bottom: 2rem;}.nav.boros .nav-item:first-child a{padding-left: 0;}</style>
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-8M4N3M3GTQ"></script>
 		<script>
 			window.dataLayer = window.dataLayer || [];
@@ -21,6 +21,12 @@
 			<p>This page shows which NYC Department of Health locations have appointments available. Instead of spending time clicking around and checking each vaccination site individually, use this chart. If you see a spot, go to <a href="https://vaccinepod.nyc.gov/">vaccinepod.nyc.gov</a> to try and book an appointment. Not all vaccination sites are available to all categories of eligible people.</p>
 			<p><a href="https://vaccinefinder.nyc.gov/">NYC Vaccine Finder</a> lists all sites across NYC which provide vaccinations, but does not show availability.</p>
 			<p>Last updated <%= @generated_at %>.</p>
+
+			<ul class="nav boros">
+				<%- @borough_map.sort.each_entry do |name,slug| -%>
+				<li class="nav-item"><a class="nav-link" href="#<%= slug %>"><%= name %></a></li>
+				<%- end -%>
+			</ul>
 
 			<table class="table table-sm">
 				<thead>
@@ -40,6 +46,7 @@
 					<%- @tbody.each do |row| -%>
 						<%-
 							borough = @site_details[row[0]][2]
+							borough_slug = @borough_map[borough]
 							site_name = @site_name_map.has_key?(row[1]) ? @site_name_map[row[1]] : row[1]
 							address = "#{@site_details[row[0]][1]}, #{borough} NY #{@site_details[row[0]][4]}"
 							description = @site_details[row[0]][5]
@@ -52,7 +59,7 @@
 						-%>
 						<%- if borough != last_borough -%>
 							<tr class="table-info">
-								<th colspan="<%= column_count %>"><%= borough %></th>
+								<th id="<%= borough_slug %>" colspan="<%= column_count %>"><%= borough %></th>
 							</tr>
 							<%- last_borough = borough -%>
 						<%- end -%>

@@ -46,6 +46,9 @@ DOSE_MAP = {
   'SeniorCare EMS Event' => 'SeniorCare EMS',
   'Senior Care EMS' => 'SeniorCare EMS',
 }
+
+@borough_map = {}
+
 ARGV << '-h' if ARGV.empty?
 
 def handle_respone(data, filename, description)
@@ -156,8 +159,12 @@ def make_appointment_list(format: :html)
 
   # map site id to name and address
   @site_details = site_data.each_with_object({}) do |element, items|
-    element[-1] = ELIGIBILITY_MAP.key?(element[-1]) ? ELIGIBILITY_MAP[element[-1]] : element[-1]
-    items[element.first.to_i] = element[1..-1]
+    site_id = element.first.to_i
+    next if EXCLUDED_SITES.include?(site_id)
+
+    element[6] = ELIGIBILITY_MAP.key?(element[6]) ? ELIGIBILITY_MAP[element[6]] : element[6]
+    items[site_id] = element[1..-1]
+    @borough_map[ element[3] ] = slugify(element[3])
     items
   end
 
@@ -204,6 +211,10 @@ end
 
 def site_location_ids
   Dir['data/sites/*.json'].map { |x| File.basename(x, '.json').to_i } - EXCLUDED_SITES
+end
+
+def slugify(s)
+  s.to_s.downcase.strip.gsub(' ', '-').gsub(/[^\w-]/, '')
 end
 
 def make_site_list
