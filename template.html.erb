@@ -115,9 +115,7 @@
 						<%- end -%>
 						<tr<% if stripe %> class="table-secondary"<% end %> data-dose="<%= (row[2] != "" ? row[2].downcase : "first") %>" data-total="<%= row[3..].map{|cell| cell.values}.flatten.sum %>">
 								<th>
-									<%- if site_name != last_site_name -%>
 									<span class="site-name" data-bs-toggle="tooltip" title="<%= address %>"><%= site_name %></span>
-									<%- last_site_name = site_name -%>
 								<%- end -%>
 								</th>
 								<th><%= row[2] %></th>
