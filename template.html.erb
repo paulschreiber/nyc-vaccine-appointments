@@ -7,6 +7,7 @@
 		<style>td{text-align:center;}.site-name{border-bottom: 1px dotted gray;}.nav,boros{margin-bottom: 2rem;}.nav.boros .nav-item:first-child a{padding-left: 0;}</style>
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-8M4N3M3GTQ"></script>
 		<script>
+		<script src="assets/bootstrap.bundle.min.js"></script>
 			window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
 			gtag('js', new Date());
@@ -66,7 +67,7 @@
 						<tr<% if stripe %> class="table-secondary"<% end %>>
 								<th>
 									<%- if site_name != last_site_name -%>
-									<span class="site-name" title="<%= address %>"><%= site_name %></span>
+									<span class="site-name" data-bs-toggle="tooltip" title="<%= address %>"><%= site_name %></span>
 									<%- last_site_name = site_name -%>
 								<%- end -%>
 								</th>
@@ -74,7 +75,7 @@
 								<th><%= description %></th>
 								<%- row[3..].each do |cell| -%>
 									<%- if cell != {} -%>
-								<td class="table-success"><span title="<%= cell.keys.map{ |key| "#{key} (#{cell[key]})" }.join(', ') -%>"><%= cell.values.sum %></span></td>
+								<td class="table-success"><span data-bs-toggle="tooltip" title="<%= cell.keys.map{ |key| "#{key} (#{cell[key]})" }.join(', ') -%>"><%= cell.values.sum %></span></td>
 									<%- else -%>
 								<td>·</td>
 									<%- end -%>
