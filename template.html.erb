@@ -4,14 +4,46 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link href="assets/bootstrap.min.css" rel="stylesheet" />
-		<style>td{text-align:center;}.site-name{border-bottom: 1px dotted gray;}.nav,boros{margin-bottom: 2rem;}.nav.boros .nav-item:first-child a{padding-left: 0;}</style>
+		<style>td{text-align:center;}.site-name{border-bottom: 1px dotted gray;}.nav,boros{margin-bottom: 2rem;}.nav-item:first-child a{padding-left: 0;}.hidden{display:none;}</style>
 		<script async src="https://www.googletagmanager.com/gtag/js?id=G-8M4N3M3GTQ"></script>
-		<script>
 		<script src="assets/bootstrap.bundle.min.js"></script>
+		<script defer>
 			window.dataLayer = window.dataLayer || [];
 			function gtag(){dataLayer.push(arguments);}
 			gtag('js', new Date());
 			gtag('config', 'G-8M4N3M3GTQ');
+			document.addEventListener('DOMContentLoaded', function() {
+				var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+				var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+					return new bootstrap.Tooltip(tooltipTriggerEl);
+				});
+				var filterApptTriggerList = Array.from(document.querySelectorAll('.filter-appointments a'));
+				var allRows = Array.from(document.querySelectorAll('[data-total]'));
+				filterApptTriggerList.forEach(function(item) {
+					item.addEventListener('click', function(e) {
+						var current = this;
+						var mode = this.getAttribute('data-type');
+						filterApptTriggerList.forEach( function(el) {
+							if (el===current) {
+								el.classList.add('active');
+							} else {
+								el.classList.remove('active');
+							}
+						});
+
+						allRows.forEach(function(row) {
+							var total = parseInt(row.getAttribute('data-total'), 0);
+							if ('without' === mode && total !== 0) {
+								row.classList.add('hidden')
+							} else if ('with' === mode && total === 0) {
+								row.classList.add('hidden')
+							} else {
+								row.classList.remove('hidden');
+							}
+						});
+					});
+				});
+			});
 		</script>
 		<title>NYC COVID-19 vaccine appointment availability</title>
 	</head>
@@ -23,7 +55,24 @@
 			<p><a href="https://vaccinefinder.nyc.gov/">NYC Vaccine Finder</a> lists all sites across NYC which provide vaccinations, but does not show availability.</p>
 			<p>Last updated <%= @generated_at %>.</p>
 
+
+			<ul class="nav nav-pills filter-appointments">
+				<li class="nav-item">
+					<a class="nav-link disabled" href="#">Show Locations:</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link active" data-type="all" href="#">All Locations</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-type="with" href="#">With Appointments</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" data-type="without" href="#">Without Appointments</a>
+				</li>
+			</ul>
+
 			<ul class="nav boros">
+				<li class="nav-item"><a class="nav-link disabled">Jump To:</a></li>
 				<%- @borough_map.sort.each_entry do |name,slug| -%>
 				<li class="nav-item"><a class="nav-link" href="#<%= slug %>"><%= name %></a></li>
 				<%- end -%>
@@ -64,7 +113,7 @@
 							</tr>
 							<%- last_borough = borough -%>
 						<%- end -%>
-						<tr<% if stripe %> class="table-secondary"<% end %>>
+						<tr<% if stripe %> class="table-secondary"<% end %> data-dose="<%= (row[2] != "" ? row[2].downcase : "first") %>" data-total="<%= row[3..].map{|cell| cell.values}.flatten.sum %>">
 								<th>
 									<%- if site_name != last_site_name -%>
 									<span class="site-name" data-bs-toggle="tooltip" title="<%= address %>"><%= site_name %></span>
